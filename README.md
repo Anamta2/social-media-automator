@@ -168,9 +168,9 @@ MIT License - feel free to use this project for learning or commercial purposes.
 
 ## 👤 Author
 
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+**Anamta **
+- GitHub: [@Anamta2](https://github.com/Anamta2)
+
 
 ## 🙏 Acknowledgments
 
