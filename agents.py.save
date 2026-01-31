@@ -1,0 +1,169 @@
+ySocial Media Automator - AI Agents
+Three specialized AI workers that create content from YouTube videos
+"""
+
+from groq import Groq
+from youtube_transcript_api import YouTubeTranscriptApi
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class ContentAgents:
+    def __init__(self):
+        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        self.model = "llama-3.3-70b-versatile"
+    
+    def get_youtube_transcript(self, video_url):
+        """Extract transcript from YouTube video"""
+        try:
+            # Extract video ID from URL
+            if "youtu.be/" in video_url:
+                video_id = video_url.split("youtu.be/")[1].split("?")[0]
+            elif "watch?v=" in video_url:
+                video_id = video_url.split("watch?v=")[1].split("&")[0]
+            else:
+                return None, "Invalid YouTube URL format"
+            
+            # Get transcript
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            full_transcript = " ".join([item['text'] for item in transcript_list])
+            return full_transcript, None
+            
+        except Exception as e:
+            return None, f"Could not get transcript: {str(e)}"
+    
+    def agent_researcher(self, transcript):
+        """Agent 1: Extract key points from transcript"""
+        prompt = f"""You are a content researcher. Analyze this video transcript and extract the 5 most important key points or tips.
+
+Transcript:
+{transcript[:4000]}  
+
+Provide ONLY the 5 key points in a clear, numbered list. Be concise."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def agent_writer(self, key_points):
+        """Agent 2: Create LinkedIn post from key points"""
+        prompt = f"""You are a social media expert. Create an engaging LinkedIn post based on these key points:
+
+{key_points}
+
+Requirements:
+- Start with a hook that grabs attention
+- Use emojis strategically (2-3 max)
+- Keep it under 200 words
+- End with a call-to-action or question
+- Professional but conversational tone
+
+yyWrite the LinkedIn post now:"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=400,
+                temperature=0.8
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def agent_artist(self, linkedin_post):
+        """Agent 3: Create image description for the post"""
+        prompt = f"""You are a creative visual designer. Based on this LinkedIn post, describe an image that would perfectly complement it.
+
+yyyyLinkedIn Post:
+{linkedin_post}
+
+Create a detailed image description (1-2 sentences) that:
+- Captures the main theme
+- Would work well on social media
+- Is professional and eye-catching
+
+Image description:"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=150,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def run_full_pipeline(self, video_url_or_text):
+        """Run all three agents in sequence"""
+        results = {
+            "success": False,
+            "transcript": None,
+            "key_points": None,
+            "linkedin_post": None,
+            "image_description": None,
+            "error": None
+        }
+        
+        # Check if input is a YouTube URL or demo text
+        if video_url_or_text.startswith("http"):
+            # Step 1: Get transcript
+            print("🎬 Agent 1 (Researcher): Getting video transcript...")
+            transcript, error = self.get_youtube_transcript(video_url_or_text)
+            if error:
+                results["error"] = error
+                return results
+            results["transcript"] = transcript[:500] + "..."
+        else:
+            # Demo mode - use provided text
+            print("🎬 Using demo text as input...")
+            transcript = video_url_or_text
+            results["transcript"] = transcript[:500] + "..."
+        
+        # Step 2: Extract key points
+        print("📝 Agent 1 (Researcher): Extracting key points...")
+        key_points = self.agent_researcher(transcript)
+        results["key_points"] = key_points
+        
+        # Step 3: Create LinkedIn post
+        print("✍️  Agent 2 (Writer): Creating LinkedIn post...")
+        linkedin_post = self.agent_writer(key_points)
+        results["linkedin_post"] = linkedin_post
+        
+        # Step 4: Create image description
+        print("🎨 Agent 3 (Artist): Designing image concept...")
+        image_desc = self.agent_artist(linkedin_post)
+        results["image_description"] = image_desc
+        
+        results["success"] = True
+        print("✅ All agents completed successfully!")
+        
+        return results
+
+
+# Test function with DEMO MO    First, time blocking - I dedicate specific hours to specific tasks. No multitasking allowed.
+    This single change doubled my output in the first month.
+    
+    Second, the two-minute rule. If something takes less than two minutes, do it immediately.
+    This prevents small tasks from piling up and becoming overwhelming.
+    
+    Third, weekly reviews. Every Sunday, I spend 30 minutes reviewing what worked and what didn't.
+    This reflection time is crucial for continuous improvement.
+    
+    Fourth, saying no more often. I realized that every yes to something unimportant is a no to something that matters.
+    Protecting your time is protecting your goals.
+    
+    Finally, morning routines matter. I wake up at 5 AM, exercise for 30 minutes, then dive into deep work.
+    The first three hours of my day are sacred - no meetings, no emails, just focused creation.
+    
+   
